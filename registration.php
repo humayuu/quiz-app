@@ -1,3 +1,106 @@
+<?php
+session_start();
+require 'config.php';
+
+// Generate CSRF Token
+if (empty($_SESSION['__csrf'])) {
+    $_SESSION['__csrf'] = bin2hex(random_bytes(32));
+}
+
+// Initialize errors in session for persistence across redirects
+if (!isset($_SESSION['errors'])) {
+    $_SESSION['errors'] = [];
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
+    $_SESSION['errors'] = []; // Clear previous errors
+    
+    if (!hash_equals($_SESSION['__csrf'], $_POST['__csrf'])) {
+        $_SESSION['errors'][] = 'CSRF Token Error';
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+
+    $fullName = filter_var(trim($_POST['name']), FILTER_SANITIZE_SPECIAL_CHARS);
+    $email = filter_var(trim($_POST['email']), FILTER_VALIDATE_EMAIL);
+    $password = trim($_POST['password']);
+    $confirmPassword = trim($_POST['confirmPassword']);
+
+    // Validations
+    if (empty($fullName) || empty($email) || empty($password) || empty($confirmPassword)) {
+        $_SESSION['errors'][] = 'All fields are required';
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+    
+    if ($email === false) {
+        $_SESSION['errors'][] = 'Invalid email format';
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+    
+    if (strlen($fullName) > 500) {
+        $_SESSION['errors'][] = 'Full name must not exceed 500 characters';
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+    
+    if (strlen($password) < 8) {
+        $_SESSION['errors'][] = 'Password must be at least 8 characters';
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+    
+    if ($password !== $confirmPassword) {
+        $_SESSION['errors'][] = 'Password and confirm password must match';
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+
+    $sql = $conn->prepare('SELECT COUNT(*) FROM user_tbl WHERE user_email = :email');
+    $sql->bindParam(':email', $email, PDO::PARAM_STR);
+    $sql->execute();
+    
+    if ($sql->fetchColumn() > 0) {
+        $_SESSION['errors'][] = 'User already exists';
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+
+    // Insert user to database
+    try {
+        $conn->beginTransaction();
+
+        $hashPassword = password_hash($password, PASSWORD_DEFAULT);
+        
+        $stmt = $conn->prepare('INSERT INTO user_tbl (user_fullname, user_email, user_password) VALUES (:ufname, :uemail, :upassword)');
+        $stmt->bindParam(':ufname', $fullName, PDO::PARAM_STR);
+        $stmt->bindParam(':uemail', $email, PDO::PARAM_STR);
+        $stmt->bindParam(':upassword', $hashPassword, PDO::PARAM_STR);
+        $result = $stmt->execute();
+
+        if ($result) {
+            $conn->commit();
+            
+            // Clear any errors and redirect to login page
+            $_SESSION['errors'] = [];
+            $_SESSION['success'] = 'Registration successful! Please login.';
+            header('Location: index.php');
+            exit;
+        }
+    } catch (Exception $e) {
+        $conn->rollBack();
+        $_SESSION['errors'][] = 'Registration error: ' . $e->getMessage();
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+}
+
+// Get errors from session and clear them
+$errors = $_SESSION['errors'] ?? [];
+$_SESSION['errors'] = [];
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,41 +114,52 @@
 
 <body>
     <div class="container mt-5">
+        <!-- Display Errors -->
+        <?php if (!empty($errors)): ?>
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <?php foreach ($errors as $error): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <?= htmlspecialchars($error) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-5">
                 <div class="card shadow">
                     <div class="card-body p-4">
                         <h2 class="card-title text-center mb-4">Quiz App</h2>
-                        <h5 class="text-center mb-4">Create Account</h5>
+                        <h5 class="text-center mb-4">Create an Account</h5>
 
-                        <form method="POST" action="">
+                        <form method="POST" action="<?= htmlspecialchars(basename(__FILE__)) ?>">
+                            <input type="hidden" name="__csrf" value="<?= htmlspecialchars($_SESSION['__csrf']) ?>">
+
                             <div class="mb-3">
                                 <label for="name" class="form-label">Name</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="name" name="name" required>
-                                </div>
+                                <input type="text" class="form-control" id="name" name="name"
+                                    value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email</label>
-                                <div class="input-group">
-                                    <input type="email" class="form-control" id="email" name="email" required>
-                                </div>
+                                <input type="email" class="form-control" id="email" name="email"
+                                    value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
-                                <div class="input-group">
-                                    <input type="password" class="form-control" id="password" name="password" required>
-                                </div>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <small class="form-text text-muted">Minimum 8 characters</small>
                             </div>
 
                             <div class="mb-4">
                                 <label for="confirmPassword" class="form-label">Confirm Password</label>
-                                <div class="input-group">
-                                    <input type="password" class="form-control" id="confirmPassword"
-                                        name="confirmPassword" required>
-                                </div>
+                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                                    required>
                             </div>
 
                             <div class="d-grid">
@@ -68,3 +182,4 @@
 </body>
 
 </html>
+<?php $conn = null; ?>
