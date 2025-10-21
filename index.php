@@ -1,34 +1,90 @@
-<?php 
+<?php
 session_start();
-if(isset($_SESSION['success'])){
+require 'config.php';
+if (isset($_SESSION['success'])) {
     $success = $_SESSION['success'];
-    unset($_SESSION['success']); 
+    unset($_SESSION['success']);
 }
 
 // Generate CSRF Token
-if(empty($_SESSION['__csrf'])){
+if (empty($_SESSION['__csrf'])) {
     $_SESSION['__csrf'] = bin2hex(random_bytes(32));
 }
 
 
 // Initialize errors in session for persistence across redirects
-if(!isset($_SESSION['errors'])){
+if (!isset($_SESSION['errors'])) {
     $_SESSION['errors'] = [];
 }
 
 
 
-if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])){
-    if(!hash_equals($_SESSION['__csrf'], $_POST['__csrf'])){
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
+    if (!hash_equals($_SESSION['__csrf'], $_POST['__csrf'])) {
         $_SESSION['errors'][] = 'CSRF token error';
         header('Location: ' . basename(__FILE__));
         exit;
     }
 
+
+    $email = filter_var(trim($_POST['email']), FILTER_VALIDATE_EMAIL);
+    $password = filter_var(trim($_POST['password']));
+
+
+    // Validations
+    if (empty($email) || empty($password)) {
+        $_SESSION['errors'][] = 'All Fields are required';
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+
+    if ($email == false) {
+        $_SESSION['errors'][] = 'Invalid email format';
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+
+
+    try {
+
+        $stmt = $conn->prepare('SELECT * FROM user_tbl WHERE user_email = :uemail');
+        $stmt->bindParam(':uemail', $email);
+        $stmt->execute();
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            $_SESSION['errors'][] = 'Invalid email or password';
+            header('Location: ' . basename(__FILE__));
+            exit;
+        }
+
+        if (!password_verify($password, $user['user_password'])) {
+            $_SESSION['errors'][] = 'Invalid email or password';
+            header('Location: ' . basename(__FILE__));
+            exit;
+        }
+
+        // Store User Data into session variable
+        $_SESSION['LoggedIn']     = true;
+        $_SESSION['userId']       = $user['id'];
+        $_SESSION['userFullname'] = $user['user_fullname'];
+        $_SESSION['userEmail']    = $user['user_email'];
+
+        // Redirected to quiz page
+        header('Location: quiz.php');
+        exit;
+
+    } catch (Exception $e) {
+        $_SESSION['errors'][] = 'Login Error ' . $e->getMessage();
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
 }
 
 
-
+// Get errors from session and clear them
+$errors = $_SESSION['errors'] ?? [];
+$_SESSION['errors'] = [];
 
 
 
@@ -47,7 +103,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])){
 
 <body>
     <div class="container mt-5">
-        <!-- Display Errors -->
+        <!-- Display Success -->
         <?php if (!empty($success)): ?>
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-5">
@@ -55,6 +111,19 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])){
                     <?= htmlspecialchars($success) ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        <!-- Display Errors -->
+        <?php if (!empty($errors)): ?>
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <?php foreach($errors as $error): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <?= htmlspecialchars($error) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php endforeach; ?>
             </div>
         </div>
         <?php endif; ?>
