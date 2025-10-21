@@ -1,3 +1,81 @@
+<?php
+session_start();
+require '../config.php';
+
+// Initialize an empty array in session for store error
+if (!isset($_SESSION['errors'])) {
+    $_SESSION['errors'] = [];
+}
+
+
+// Generate CSRF Token
+if (empty($_SESSION['__csrf'])) {
+    $_SESSION['__csrf'] = bin2hex(random_bytes(32));
+}
+
+
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['issSubmitted'])) {
+    if (!hash_equals($_SESSION['__csrf'], $_POST['__csrf'])) {
+        $_SESSION['errors'][] = 'CSRF Token Error';
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+    
+
+
+    $userName = filter_var(trim($_POST['username']), FILTER_SANITIZE_SPECIAL_CHARS);
+    $password = filter_var(trim($_POST['password']));
+
+    // Validations
+    if (empty($userName) || empty($password)) {
+        $_SESSION['errors'][] = 'All Fields are required';
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+
+    try {
+
+        $stmt = $conn->prepare('SELECT * FROM admin_tbl WHERE user_name = :uname');
+        $stmt->bindParam(':uname', $userName);
+        $stmt->execute();
+        $admin = $stmt->fetch();
+
+        if (!$admin) {
+            $_SESSION['errors'][] = 'Invalid User name or password';
+            header('Location: ' . basename(__FILE__));
+            exit;
+        }
+
+
+        if (!password_verify($password, $admin['user_password'])) {
+            $_SESSION['errors'][] = 'Invalid User name or password';
+            header('Location: ' . basename(__FILE__));
+            exit;
+        }
+
+
+      
+        // Store Admin Data into session variable
+        $_SESSION['LoggedIn']      = true;
+        $_SESSION['AdminId']       = $admin['id'];
+        $_SESSION['adminName']     = $admin['user_name'];
+
+        // Redirected to quiz page
+        header('Location: quiz/index.php');
+        exit;
+    } catch (Exception $e) {
+        $_SESSION['errors'][] = 'Admin Login Error ' . $e->getMessage();
+        header('Location: ' . basename(__FILE__));
+        exit;
+    }
+    }
+
+// Get errors from session and clear them
+$errors = $_SESSION['errors'] ?? [];
+$_SESSION['errors'] = [];
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -20,12 +98,26 @@
                         <div class="text-center mb-5">
                             <h3 class="fw-bold">Admin Login</h3>
                         </div>
-
-                        <form>
+                        <!-- Display Errors -->
+                        <?php if (!empty($errors)): ?>
+                        <div class="row text-center justify-content-center">
+                            <div class="col-md-12 col-lg-12">
+                                <?php foreach($errors as $error): ?>
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <?= htmlspecialchars($error) ?>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                        aria-label="Close"></button>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        <form method="post" action="<?= htmlspecialchars(basename(__FILE__)) ?>">
+                            <input type="hidden" name="__csrf" value="<?= htmlspecialchars($_SESSION['__csrf']) ?>">
                             <div class="mb-4">
-                                <label for="inputEmailAddress" class="form-label">Email Address</label>
-                                <input type="email" name="email" class="form-control form-control-lg"
-                                    id="inputEmailAddress" placeholder="Email Address">
+                                <label for="inputEmailAddress" class="form-label">User Name</label>
+                                <input type="text" name="username" class="form-control form-control-lg"
+                                    id="inputEmailAddress" placeholder="User Name">
                             </div>
 
                             <div class="mb-5">
@@ -40,7 +132,7 @@
                             </div>
 
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary btn-lg py-3">
+                                <button type="submit" name="issSubmitted" class="btn btn-primary btn-lg py-3">
                                     <i class="bi bi-lock-fill me-2"></i>Sign in
                                 </button>
                             </div>
