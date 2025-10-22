@@ -23,41 +23,33 @@
                             <form>
                                 <div class="mb-3">
                                     <label for="categoryName" class="form-label">Add Questions</label>
-                                    <input type="text" class="form-control" id="categoryName"
-                                        placeholder="Enter category name">
+                                    <input type="text" class="form-control" name="question"
+                                        placeholder="Enter Questions">
                                 </div>
                                 <div class="mb-3">
                                     <label for="categoryName" class="form-label">Add Opt1</label>
-                                    <input type="text" class="form-control" id="categoryName"
-                                        placeholder="Enter category name">
+                                    <input type="text" class="form-control" name="opt1" placeholder="Enter Opt1">
                                 </div>
                                 <div class="mb-3">
                                     <label for="categoryName" class="form-label">Add Opt2</label>
-                                    <input type="text" class="form-control" id="categoryName"
-                                        placeholder="Enter category name">
+                                    <input type="text" class="form-control" name="opt2" placeholder="Enter Opt2">
                                 </div>
                                 <div class="mb-3">
                                     <label for="categoryName" class="form-label">Add Opt3</label>
-                                    <input type="text" class="form-control" id="categoryName"
-                                        placeholder="Enter category name">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="categoryName" class="form-label">Add Opt3</label>
-                                    <input type="text" class="form-control" id="categoryName"
-                                        placeholder="Enter category name">
+                                    <input type="text" class="form-control" name="opt3" placeholder="Enter Opt3">
                                 </div>
                                 <div class="mb-3">
                                     <label for="categoryName" class="form-label">Add Opt4</label>
-                                    <input type="text" class="form-control" id="categoryName"
-                                        placeholder="Enter category name">
+                                    <input type="text" class="form-control" name="opt4" placeholder="Enter Opt4">
                                 </div>
                                 <div class="mb-3">
                                     <label for="categoryName" class="form-label">Add Answer </label>
-                                    <input type="text" class="form-control" id="categoryName"
-                                        placeholder="Enter category name">
+                                    <input type="text" class="form-control" name="answer" placeholder="Enter Answer">
                                 </div>
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary">Add Questions</button>
+                                    <a href="exam_questions.php" class="btn btn-danger">Back</a>
+
                                 </div>
                             </form>
                         </div>

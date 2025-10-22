@@ -1,4 +1,17 @@
-<?php require 'layout/header.php'; ?>
+<?php
+// Database Connection
+require '../../config.php';
+
+try{
+    $stmt = $conn->prepare('SELECT * FROM exam_category_tbl ORDER BY exam_category');
+    $stmt->execute();
+    $categories = $stmt->fetchAll();
+}catch(Exception $e){
+    throw new Exception('Error in fetch all Category ' . $e->getMessage());
+}
+
+require 'layout/header.php';
+?>
 
 <!--page-wrapper-->
 <div class="page-wrapper">
@@ -21,6 +34,7 @@
                             </h5>
                             <hr>
                             <div class="table-responsive">
+                                <?php $sl = 1; if($categories): ?>
                                 <table class="table table-bordered">
                                     <thead class="table-light">
                                         <tr>
@@ -31,17 +45,26 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        <?php foreach($categories as $category): ?>
                                         <tr>
-                                            <td class="fs-5">1</td>
-                                            <td class="fs-5">Mathematics</td>
-                                            <td class="fs-5 fw-bold">60</td>
+                                            <td class="fs-5 text-center"><?= $sl++ ?></td>
+                                            <td class="fs-5"><?= htmlspecialchars($category['exam_category']) ?></td>
+                                            <td class="fs-5 fw-bold">
+                                                <?= htmlspecialchars($category['exam_time_in_minutes']) ?></td>
                                             <td>
-                                                <a class="btn"
+                                                <a href="add_edit_questions.php?id=<?= htmlspecialchars($category['id'])?>"
+                                                    class="btn"
                                                     style="background-color: #6f42c1; color: white;">Select</a>
                                             </td>
                                         </tr>
+                                        <?php endforeach; ?>
                                     </tbody>
                                 </table>
+                                <?php else: ?>
+                                <div class="alert alert-danger" role="alert">
+                                    No Category Found!
+                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
