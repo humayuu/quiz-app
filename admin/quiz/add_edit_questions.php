@@ -87,33 +87,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['imageSubmit'])) {
 
     $categoryId = filter_var(trim($_POST['category_id']), FILTER_VALIDATE_INT);
 
-    // Validate category ID
+    // Validate category ID from POST
     if ($categoryId === false || $categoryId === null || $categoryId <= 0) {
         $_SESSION['errors'][] = 'Invalid Category ID';
         header('Location: exam_questions.php');
         exit;
     }
 
-    $imageQuestion = filter_var(trim($_POST['image_question']), FILTER_SANITIZE_SPECIAL_CHARS);
-    $allowedExtension = ['jpeg', 'jpg', 'png'];
-    $maxFileSize = 2 * 1024 * 1024; //2MB
+    $question = filter_var(trim($_POST['image_question']), FILTER_SANITIZE_SPECIAL_CHARS);
+    $allowedExtension = ['jpg', 'jpeg', 'png', 'gif'];
+    $maxFileSize = 2 * 1024 * 1024; // 2MB
     $uploadDir = __DIR__ . '/uploads/images/';
 
     // Validation
-    if (empty($imageQuestion)) {
-        $_SESSION['errors'][] = 'Question field is required';
+    if (empty($question)) {
+        $_SESSION['errors'][] = 'All Fields are required';
         header('Location: ' . basename(__FILE__) . '?id=' . urlencode($categoryId));
         exit;
     }
 
+    // Create a directory if its not exits
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
 
-    // Check if all files are uploaded
     $fileFields = ['image_opt1', 'image_opt2', 'image_opt3', 'image_opt4', 'image_answer'];
-    foreach ($fileFields as $field) {
-        if (!isset($_FILES[$field]) || $_FILES[$field]['error'] !== UPLOAD_ERR_OK) {
+
+    foreach ($fileFields as $files) {
+        if (!isset($_FILES[$files]) || $_FILES[$files]['error'] !== UPLOAD_ERR_OK) {
             $_SESSION['errors'][] = "Please upload all 5 images (Options 1-4 and Answer)";
             header('Location: ' . basename(__FILE__) . '?id=' . urlencode($categoryId));
             exit;
@@ -121,38 +122,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['imageSubmit'])) {
     }
 
     // Process and upload all images
-    $uploadedImages = [];
-    
-    foreach ($fileFields as $field) {
-        $ext = strtolower(pathinfo($_FILES[$field]['name'], PATHINFO_EXTENSION));
-        $size = $_FILES[$field]['size'];
-        $tmpName = $_FILES[$field]['tmp_name'];
+    $uploadImages = [];
 
-        // Validate extension
+    foreach ($fileFields as $fields) {
+        $ext = strtolower(pathinfo($_FILES[$fields]['name'], PATHINFO_EXTENSION));
+        $size = $_FILES[$fields]['size'];
+        $tmpName = $_FILES[$fields]['tmp_name'];
+
+        // Validation Extension
         if (!in_array($ext, $allowedExtension)) {
             $_SESSION['errors'][] = "Invalid file extension for {$field}. Only JPEG, JPG, PNG allowed.";
             header('Location: ' . basename(__FILE__) . '?id=' . urlencode($categoryId));
             exit;
         }
 
-        // Validate size
+        // Validation Size
         if ($size > $maxFileSize) {
             $_SESSION['errors'][] = "File size for {$field} exceeds 2MB limit";
             header('Location: ' . basename(__FILE__) . '?id=' . urlencode($categoryId));
             exit;
         }
 
-        // Generate unique filename
         $newName = uniqid('image_') . time() . '_' . rand(1000, 9999) . '.' . $ext;
 
-        // Upload file
         if (!move_uploaded_file($tmpName, $uploadDir . $newName)) {
             $_SESSION['errors'][] = "File upload error for {$field}";
             header('Location: ' . basename(__FILE__) . '?id=' . urlencode($categoryId));
             exit;
         }
 
-        $uploadedImages[$field] = 'uploads/images/' . $newName;
+        $uploadImages[$fields] = 'uploads/images/' . $newName;
     }
 
     // Insert data into the database
@@ -160,12 +159,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['imageSubmit'])) {
         $conn->beginTransaction();
 
         $stmt = $conn->prepare('INSERT INTO questions_tbl (question, opt_1, opt_2, opt_3, opt_4, answer, category_id) VALUES (:question, :opt1, :opt2, :opt3, :opt4, :answer, :catid)');
-        $stmt->bindParam(':question', $imageQuestion);
-        $stmt->bindParam(':opt1', $uploadedImages['image_opt1']);
-        $stmt->bindParam(':opt2', $uploadedImages['image_opt2']);
-        $stmt->bindParam(':opt3', $uploadedImages['image_opt3']);
-        $stmt->bindParam(':opt4', $uploadedImages['image_opt4']);
-        $stmt->bindParam(':answer', $uploadedImages['image_answer']);
+        $stmt->bindParam(':question', $question);
+        $stmt->bindParam(':opt1', $uploadImages['image_opt1']);
+        $stmt->bindParam(':opt2', $uploadImages['image_opt2']);
+        $stmt->bindParam(':opt3', $uploadImages['image_opt3']);
+        $stmt->bindParam(':opt4', $uploadImages['image_opt4']);
+        $stmt->bindParam(':answer', $uploadImages['image_answer']);
         $stmt->bindParam(':catid', $categoryId, PDO::PARAM_INT);
         $result = $stmt->execute();
 
@@ -177,16 +176,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['imageSubmit'])) {
         }
     } catch (Exception $e) {
         $conn->rollBack();
-        
-        // Delete uploaded images if database insert fails
-        foreach ($uploadedImages as $imagePath) {
-            $fullPath = __DIR__ . '/' . $imagePath;
-            if (file_exists($fullPath)) {
-                unlink($fullPath);
+          // Delete Uploaded images if database inserted fails
+            foreach ($uploadImages as $imagePath) {
+                $fullPath = __DIR__ . '/' . $imagePath;
+                if (file_exists($fullPath)) {
+                    unlink($fullPath);
+                }
             }
-        }
-        
-        $_SESSION['errors'][] = 'Database insert error: ' . $e->getMessage();
+        $_SESSION['errors'][] = 'Database insert error ' . $e->getMessage();
         header('Location: ' . basename(__FILE__) . '?id=' . urlencode($categoryId));
         exit;
     }
@@ -216,7 +213,7 @@ require 'layout/header.php';
 <div class="page-wrapper">
     <!--page-content-wrapper-->
     <div class="page-content-wrapper">
-        < class="page-content">
+        <div class="page-content">
             <div class="row">
                 <div class="col-12">
                     <h4 class="mb-4">Exam Questions</h4>
@@ -341,11 +338,6 @@ require 'layout/header.php';
                     </div>
                 </div>
             </div>
-            <?php 
-            $sql = $conn->prepare('SELECT * FROM questions_tbl ORDER BY question DESC');
-            $sql->execute();
-            $rows = $sql->fetchAll();
-            ?>
             <div class="row">
                 <!-- Display Table-->
                 <div class="col-lg-12">
@@ -355,7 +347,6 @@ require 'layout/header.php';
                                 <i class="bx bx-plus-circle me-2"></i>Exam Questions
                             </h5>
                             <hr>
-                            <?php $sl = 1; if($rows): ?>
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -371,15 +362,9 @@ require 'layout/header.php';
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach($rows as $row): ?>
                                     <tr>
-                                        <th scope="row"><?= htmlspecialchars($sl++) ?></th>
-                                        <td><?= htmlspecialchars($row['question']) ?></td>
-                                        <td><?= htmlspecialchars($row['opt_1']) ?></td>
-                                        <td><?= htmlspecialchars($row['opt_2']) ?></td>
-                                        <td><?= htmlspecialchars($row['opt_3']) ?></td>
-                                        <td><?= htmlspecialchars($row['opt_4']) ?></td>
-                                        <td><?= htmlspecialchars($row['answer']) ?></td>
+                                        <th scope="row">1</th>
+                                        <td>23232</td>
                                         <td>
                                             <a href="#" class="btn btn-sm"
                                                 style="background-color: #6f42c1; color: white;">Edit</a>
@@ -388,21 +373,19 @@ require 'layout/header.php';
                                                 style="background-color: #e83e8c; color: white;">Delete</a>
                                         </td>
                                     </tr>
-                                    <?php endforeach; ?>
                                 </tbody>
                             </table>
-                            <?php else: ?>
+
                             <div class="alert alert-danger" role="alert">
                                 No Questions Found!
                             </div>
-                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
     </div>
-</div>
-<!--end page-content-wrapper-->
+    <!--end page-content-wrapper-->
 </div>
 <!--end page-wrapper-->
 
