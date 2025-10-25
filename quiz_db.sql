@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 22, 2025 at 06:52 AM
+-- Generation Time: Oct 25, 2025 at 02:03 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -43,6 +43,37 @@ INSERT INTO `admin_tbl` (`id`, `user_name`, `user_password`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `exam_category_tbl`
+--
+
+CREATE TABLE `exam_category_tbl` (
+  `id` int(11) NOT NULL,
+  `exam_category` varchar(100) DEFAULT NULL,
+  `exam_time_in_minutes` varchar(10) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `questions_tbl`
+--
+
+CREATE TABLE `questions_tbl` (
+  `id` int(11) NOT NULL,
+  `question` varchar(255) DEFAULT NULL,
+  `opt_1` varchar(100) DEFAULT NULL,
+  `opt_2` varchar(100) DEFAULT NULL,
+  `opt_3` varchar(100) DEFAULT NULL,
+  `opt_4` varchar(100) DEFAULT NULL,
+  `answer` varchar(100) DEFAULT NULL,
+  `category_id` varchar(100) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `user_tbl`
 --
 
@@ -55,14 +86,6 @@ CREATE TABLE `user_tbl` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Dumping data for table `user_tbl`
---
-
-INSERT INTO `user_tbl` (`id`, `user_fullname`, `user_email`, `user_password`, `created_at`) VALUES
-(1, 'Humayun', 'humayun@gmail.com', '$2y$10$DeqY5D1QyOfbod5AMjfXUuPqIRr5rdFTwrPpUBnbwim/wzTrrvUIG', '2025-10-20 06:32:58'),
-(2, 'Ahmed', 'ahmed@gmail.com', '$2y$10$77LZIAKdPTFOfM26Rkcq9e771Iyz5eX0MT/rIJFDn5Wg9t0AuBPMK', '2025-10-20 06:38:43');
-
---
 -- Indexes for dumped tables
 --
 
@@ -70,6 +93,18 @@ INSERT INTO `user_tbl` (`id`, `user_fullname`, `user_email`, `user_password`, `c
 -- Indexes for table `admin_tbl`
 --
 ALTER TABLE `admin_tbl`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `exam_category_tbl`
+--
+ALTER TABLE `exam_category_tbl`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `questions_tbl`
+--
+ALTER TABLE `questions_tbl`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -89,10 +124,22 @@ ALTER TABLE `admin_tbl`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT for table `exam_category_tbl`
+--
+ALTER TABLE `exam_category_tbl`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `questions_tbl`
+--
+ALTER TABLE `questions_tbl`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `user_tbl`
 --
 ALTER TABLE `user_tbl`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
