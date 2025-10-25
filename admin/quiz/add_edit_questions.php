@@ -275,6 +275,10 @@ $_SESSION['success'] = [];
 
 
 $id = isset($_GET['id']) ? htmlspecialchars($_GET['id']) : '';
+$sql = $conn->prepare('SELECT * FROM questions_tbl WHERE category_id = :id  ORDER BY question DESC');
+$sql->bindParam(':id', $id);
+$sql->execute();
+$rows = $sql->fetchAll();
 
 // Validate that ID exists only on GET requests
 if (empty($id)) {
@@ -419,9 +423,7 @@ require 'layout/header.php';
                 </div>
             </div>
             <?php
-            $sql = $conn->prepare('SELECT * FROM questions_tbl ORDER BY question DESC');
-            $sql->execute();
-            $rows = $sql->fetchAll();
+
 
             ?>
             <div class="row">
@@ -499,7 +501,7 @@ require 'layout/header.php';
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <form class="d-inline" method="post" action="update_question.php"
+                                            <form class="d-inline" method="post" action="update_questions.php"
                                                 enctype="multipart/form-data">
                                                 <input type="hidden" name="__csrf"
                                                     value="<?= htmlspecialchars($_SESSION['__csrf']) ?>">
@@ -507,8 +509,7 @@ require 'layout/header.php';
                                                     value="<?= htmlspecialchars($id) ?>">
                                                 <input type="hidden" name="id"
                                                     value="<?= htmlspecialchars($row['id']) ?>">
-                                                <button onclick="return confirm('Are you sure ?')"
-                                                    class="btn btn-sm me-1"
+                                                <button name="editBtn" class="btn btn-sm me-1"
                                                     style="background-color: #6f42c1; color: white;">Edit</button>
                                             </form>
 
