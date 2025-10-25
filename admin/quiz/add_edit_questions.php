@@ -3,14 +3,31 @@ session_start();
 // Connection to database
 require '../../config.php';
 
+// Function fo Check if the image is Exists or not
+function isImage($value)
+{
+    if (empty($value)) {
+        return false;
+    }
+
+    $imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+    $extension = strtolower(pathinfo($value, PATHINFO_EXTENSION));
+
+    return in_array($extension, $imageExtensions);
+}
+
+$sl = 1;
+
+
 // Generate CSRF Token
 if (empty($_SESSION['__csrf'])) {
     $_SESSION['__csrf'] = bin2hex(random_bytes(32));
 }
 
 // Initialize errors in session for persistence across redirects
-if (!isset($_SESSION['errors'])) {
+if (!isset($_SESSION['errors']) && !isset($_SESSION['success'])) {
     $_SESSION['errors'] = [];
+    $_SESSION['success'] = [];
 }
 
 // Add Question with text
@@ -61,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['isSubmitted'])) {
 
         if ($result) {
             $conn->commit();
-            $_SESSION['success'] = 'Question added successfully!';
+            $_SESSION['success'][] = 'Question added successfully!';
             header('Location: add_edit_questions.php?id=' . $categoryId);
             exit;
         }
@@ -131,14 +148,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['imageSubmit'])) {
 
         // Validation Extension
         if (!in_array($ext, $allowedExtension)) {
-            $_SESSION['errors'][] = "Invalid file extension for {$field}. Only JPEG, JPG, PNG allowed.";
+            $_SESSION['errors'][] = "Invalid file extension for {$fields}. Only JPEG, JPG, PNG allowed.";
             header('Location: ' . basename(__FILE__) . '?id=' . urlencode($categoryId));
             exit;
         }
 
         // Validation Size
         if ($size > $maxFileSize) {
-            $_SESSION['errors'][] = "File size for {$field} exceeds 2MB limit";
+            $_SESSION['errors'][] = "File size for {$fields} exceeds 2MB limit";
             header('Location: ' . basename(__FILE__) . '?id=' . urlencode($categoryId));
             exit;
         }
@@ -146,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['imageSubmit'])) {
         $newName = uniqid('image_') . time() . '_' . rand(1000, 9999) . '.' . $ext;
 
         if (!move_uploaded_file($tmpName, $uploadDir . $newName)) {
-            $_SESSION['errors'][] = "File upload error for {$field}";
+            $_SESSION['errors'][] = "File upload error for {$fields}";
             header('Location: ' . basename(__FILE__) . '?id=' . urlencode($categoryId));
             exit;
         }
@@ -170,21 +187,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['imageSubmit'])) {
 
         if ($result) {
             $conn->commit();
-            $_SESSION['success'] = 'Question added successfully!';
+            $_SESSION['success'][] = 'Question added successfully!';
             header('Location: add_edit_questions.php?id=' . $categoryId);
             exit;
         }
     } catch (Exception $e) {
         $conn->rollBack();
-          // Delete Uploaded images if database inserted fails
-            foreach ($uploadImages as $imagePath) {
-                $fullPath = __DIR__ . '/' . $imagePath;
-                if (file_exists($fullPath)) {
-                    unlink($fullPath);
-                }
+        // Delete Uploaded images if database inserted fails
+        foreach ($uploadImages as $imagePath) {
+            $fullPath = __DIR__ . '/' . $imagePath;
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
             }
+        }
         $_SESSION['errors'][] = 'Database insert error ' . $e->getMessage();
         header('Location: ' . basename(__FILE__) . '?id=' . urlencode($categoryId));
+        exit;
+    }
+}
+
+
+// Delete Question
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
+    // Verify CSRF Token
+    if (!hash_equals($_SESSION['__csrf'], $_POST['__csrf'])) {
+        $_SESSION['errors'][] = 'Invalid CSRF Token';
+        header('Location: exam_questions.php');
+        exit;
+    }
+
+    $deleteId = filter_var(trim($_POST['deleteId']), FILTER_VALIDATE_INT);
+    $categoryId = filter_var(trim($_POST['category_id']), FILTER_VALIDATE_INT);
+
+    // Fetch image if they exists
+    $sql = $conn->prepare('SELECT * FROM questions_tbl WHERE id = :id');
+    $sql->bindParam(':id', $deleteId);
+    $sql->execute();
+    $row = $sql->fetch();
+
+    // Validate category ID from POST
+    if ($categoryId === false || $categoryId === null || $categoryId <= 0) {
+        $_SESSION['errors'][] = 'Invalid Category ID';
+        header('Location: exam_questions.php');
+        exit;
+    }
+
+    try {
+        $conn->beginTransaction();
+        $delete = $conn->prepare('DELETE FROM questions_tbl WHERE id = :id');
+        $delete->bindParam(':id', $deleteId);
+        $result = $delete->execute();
+
+        if ($result) {
+            $conn->commit();
+
+            // Delete image files if they exist
+            if (!empty($row)) {
+                foreach ($row as $columnValue) {
+                    if (!empty($columnValue) && isImage($columnValue) && file_exists($columnValue)) {
+                        unlink($columnValue);
+                    }
+                }
+            }
+
+            $_SESSION['success'][] = 'Question Deleted Successfully';
+            header('Location: add_edit_questions.php?id=' . urlencode($categoryId));
+            exit;
+        }
+    } catch (Exception $e) {
+        $conn->rollBack();
+        $_SESSION['errors'] = 'Error in delete question ' . $e->getMessage();
+        header('Location: add_edit_questions.php?id=' . urlencode($categoryId));
         exit;
     }
 }
@@ -197,6 +270,10 @@ $_SESSION['errors'] = [];
 $success = $_SESSION['success'] ?? [];
 $_SESSION['success'] = [];
 
+
+
+
+
 $id = isset($_GET['id']) ? htmlspecialchars($_GET['id']) : '';
 
 // Validate that ID exists only on GET requests
@@ -205,6 +282,7 @@ if (empty($id)) {
     header('Location: exam_questions.php');
     exit;
 }
+
 
 require 'layout/header.php';
 ?>
@@ -237,9 +315,11 @@ require 'layout/header.php';
                 <?php if (!empty($success)): ?>
                 <div class="row justify-content-center">
                     <div class="col-md-6 col-lg-5">
+                        <?php foreach ($success as $message): ?>
                         <div class="alert alert-success fade show" role="alert">
-                            Questions Successfully add.
+                            <?= htmlspecialchars($message) ?>
                         </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -338,6 +418,12 @@ require 'layout/header.php';
                     </div>
                 </div>
             </div>
+            <?php
+            $sql = $conn->prepare('SELECT * FROM questions_tbl ORDER BY question DESC');
+            $sql->execute();
+            $rows = $sql->fetchAll();
+
+            ?>
             <div class="row">
                 <!-- Display Table-->
                 <div class="col-lg-12">
@@ -347,6 +433,7 @@ require 'layout/header.php';
                                 <i class="bx bx-plus-circle me-2"></i>Exam Questions
                             </h5>
                             <hr>
+                            <?php if ($rows): ?>
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -362,23 +449,94 @@ require 'layout/header.php';
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <?php foreach ($rows as $row): ?>
                                     <tr>
-                                        <th scope="row">1</th>
-                                        <td>23232</td>
+                                        <th scope="row"><?= htmlspecialchars($sl++) ?></th>
+
+                                        <td><?= htmlspecialchars($row['question']) ?></td>
                                         <td>
-                                            <a href="#" class="btn btn-sm"
-                                                style="background-color: #6f42c1; color: white;">Edit</a>
-                                            <a href="#" onclick="return confirm('Are you sure ?')"
-                                                class="btn btn-sm ms-1"
-                                                style="background-color: #e83e8c; color: white;">Delete</a>
+                                            <?php if (!empty($row['opt_1']) && isImage($row['opt_1'])): ?>
+                                            <img class="img-thumbnail" src="<?= htmlspecialchars($row['opt_1']) ?>"
+                                                alt="Option 1" style="max-width: 100px; height: auto;">
+                                            <?php else: ?>
+                                            <?= htmlspecialchars($row['opt_1']) ?>
+                                            <?php endif; ?>
                                         </td>
+
+                                        <td>
+                                            <?php if (!empty($row['opt_2']) && isImage($row['opt_2'])): ?>
+                                            <img class="img-thumbnail" src="<?= htmlspecialchars($row['opt_2']) ?>"
+                                                alt="Option 2" style="max-width: 100px; height: auto;">
+                                            <?php else: ?>
+                                            <?= htmlspecialchars($row['opt_2']) ?>
+                                            <?php endif; ?>
+                                        </td>
+
+                                        <td>
+                                            <?php if (!empty($row['opt_3']) && isImage($row['opt_3'])): ?>
+                                            <img class="img-thumbnail" src="<?= htmlspecialchars($row['opt_3']) ?>"
+                                                alt="Option 3" style="max-width: 100px; height: auto;">
+                                            <?php else: ?>
+                                            <?= htmlspecialchars($row['opt_3']) ?>
+                                            <?php endif; ?>
+                                        </td>
+
+                                        <td>
+                                            <?php if (!empty($row['opt_4']) && isImage($row['opt_4'])): ?>
+                                            <img class="img-thumbnail" src="<?= htmlspecialchars($row['opt_4']) ?>"
+                                                alt="Option 4" style="max-width: 100px; height: auto;">
+                                            <?php else: ?>
+                                            <?= htmlspecialchars($row['opt_4']) ?>
+                                            <?php endif; ?>
+                                        </td>
+
+                                        <td>
+                                            <?php if (!empty($row['answer']) && isImage($row['answer'])): ?>
+                                            <img class="img-thumbnail" src="<?= htmlspecialchars($row['answer']) ?>"
+                                                alt="Answer" style="max-width: 100px; height: auto;">
+                                            <?php else: ?>
+                                            <?= htmlspecialchars($row['answer']) ?>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <form class="d-inline" method="post" action="update_question.php"
+                                                enctype="multipart/form-data">
+                                                <input type="hidden" name="__csrf"
+                                                    value="<?= htmlspecialchars($_SESSION['__csrf']) ?>">
+                                                <input type="hidden" name="category_id"
+                                                    value="<?= htmlspecialchars($id) ?>">
+                                                <input type="hidden" name="id"
+                                                    value="<?= htmlspecialchars($row['id']) ?>">
+                                                <button onclick="return confirm('Are you sure ?')"
+                                                    class="btn btn-sm me-1"
+                                                    style="background-color: #6f42c1; color: white;">Edit</button>
+                                            </form>
+
+                                            <form class="d-inline" method="post"
+                                                action="<?= htmlspecialchars(basename(__FILE__)) ?>"
+                                                enctype="multipart/form-data">
+                                                <input type="hidden" name="__csrf"
+                                                    value="<?= htmlspecialchars($_SESSION['__csrf']) ?>">
+                                                <input type="hidden" name="category_id"
+                                                    value="<?= htmlspecialchars($id) ?>">
+                                                <input type="hidden" name="deleteId"
+                                                    value="<?= htmlspecialchars($row['id']) ?>">
+                                                <button name="delete" onclick="return confirm('Are you sure ?')"
+                                                    class="btn btn-sm"
+                                                    style="background-color: #e83e8c; color: white;">Delete</button>
+                                            </form>
+                                        </td>
+
+
                                     </tr>
+                                    <?php endforeach; ?>
                                 </tbody>
                             </table>
-
+                            <?php else: ?>
                             <div class="alert alert-danger" role="alert">
                                 No Questions Found!
                             </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
