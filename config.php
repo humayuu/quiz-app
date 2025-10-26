@@ -1,10 +1,10 @@
-<?php 
+<?php
 
-try{
+try {
 
     $dsn = 'mysql:host=localhost;dbname=quiz_db;charset=utf8mb4;';
     $user = 'root';
-    $password = '';
+    $password = 'password';
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -12,7 +12,6 @@ try{
     ];
 
     $conn = new PDO($dsn, $user, $password, $options);
-
-}catch(PDOException $e){
+} catch (PDOException $e) {
     throw new Exception('Database connection error ' . $e->getMessage());
 }

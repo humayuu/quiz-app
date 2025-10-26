@@ -70,10 +70,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
         $_SESSION['userFullname'] = $user['user_fullname'];
         $_SESSION['userEmail']    = $user['user_email'];
 
-        // Redirected to quiz page
-        header('Location: quiz.php');
+        // Redirected to select_exam page
+        header('Location: select_exam.php');
         exit;
-
     } catch (Exception $e) {
         $_SESSION['errors'][] = 'Login Error ' . $e->getMessage();
         header('Location: ' . basename(__FILE__));
@@ -105,27 +104,27 @@ $_SESSION['errors'] = [];
     <div class="container mt-5">
         <!-- Display Success -->
         <?php if (!empty($success)): ?>
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5">
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <?= htmlspecialchars($success) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <?= htmlspecialchars($success) ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
                 </div>
             </div>
-        </div>
         <?php endif; ?>
         <!-- Display Errors -->
         <?php if (!empty($errors)): ?>
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5">
-                <?php foreach($errors as $error): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <?= htmlspecialchars($error) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <?php foreach ($errors as $error): ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <?= htmlspecialchars($error) ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
-                <?php endforeach; ?>
             </div>
-        </div>
         <?php endif; ?>
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-5">

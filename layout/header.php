@@ -48,3 +48,10 @@
             </div>
         </div>
     </nav>
+    <!-- Main Content -->
+    <div class="container my-4 flex-grow-1">
+        <div class="row g-3 g-md-4">
+            <!-- Countdown Heading (Top Left) -->
+            <div class="col-12">
+                <h3 class="text-primary mb-3">Countdown Timer</h3>
+            </div>
