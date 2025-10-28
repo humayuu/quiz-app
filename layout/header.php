@@ -22,10 +22,11 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link fs-6 text-light" aria-current="page" href="#">Select Exam</a>
+                        <a class="nav-link fs-6 text-light" aria-current="page" href=".././quiz/select_exam.php">Select
+                            Exam</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link fs-6 text-light" href="#">Last Results</a>
+                        <a class="nav-link fs-6 text-light" href=".././quiz/user_result.php">Last Results</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link fs-6 text-light" href="#">Logout</a>
@@ -52,6 +53,6 @@
     <div class="container my-4 flex-grow-1">
         <div class="row g-3 g-md-4">
             <!-- Countdown Heading (Top Left) -->
-            <div class="col-12">
+            <!-- <div class="col-12">
                 <h3 class="text-primary mb-3">Countdown Timer</h3>
-            </div>
+            </div> -->

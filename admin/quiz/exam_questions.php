@@ -38,7 +38,7 @@ require 'layout/header.php';
                                 <table class="table table-bordered">
                                     <thead class="table-light">
                                         <tr>
-                                            <th class="fs-5">#</th>
+                                            <th class="text-center fs-5">#</th>
                                             <th class="fs-5">Exam Name</th>
                                             <th class="fs-5">Time (Minutes)</th>
                                             <th class="fs-5">Actions</th>

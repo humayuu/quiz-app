@@ -435,72 +435,52 @@ require 'layout/header.php';
                                 <i class="bx bx-plus-circle me-2"></i>Exam Questions
                             </h5>
                             <hr>
+
                             <?php if ($rows): ?>
-                            <table class="table">
-                                <thead>
+                            <table class="table table-bordered align-middle table-sm">
+                                <thead class="table-light text-center">
                                     <tr>
-                                        <th>#</th>
-                                        <th>Questions</th>
+                                        <th style="width: 40px;">#</th>
+                                        <th>Question</th>
                                         <th>Option 1</th>
                                         <th>Option 2</th>
                                         <th>Option 3</th>
                                         <th>Option 4</th>
                                         <th>Answer</th>
-                                        <th>Actions</th>
-
+                                        <th style="width: 150px;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($rows as $row): ?>
                                     <tr>
                                         <th scope="row"><?= htmlspecialchars($sl++) ?></th>
-
-                                        <td><?= htmlspecialchars($row['question']) ?></td>
-                                        <td>
-                                            <?php if (!empty($row['opt_1']) && isImage($row['opt_1'])): ?>
-                                            <img class="img-thumbnail" src="<?= htmlspecialchars($row['opt_1']) ?>"
-                                                alt="Option 1" style="max-width: 100px; height: auto;">
-                                            <?php else: ?>
-                                            <?= htmlspecialchars($row['opt_1']) ?>
-                                            <?php endif; ?>
+                                        <td style="white-space: normal; word-wrap: break-word;">
+                                            <?= htmlspecialchars($row['question']) ?>
                                         </td>
 
-                                        <td>
-                                            <?php if (!empty($row['opt_2']) && isImage($row['opt_2'])): ?>
-                                            <img class="img-thumbnail" src="<?= htmlspecialchars($row['opt_2']) ?>"
-                                                alt="Option 2" style="max-width: 100px; height: auto;">
+                                        <?php for ($i = 1; $i <= 4; $i++): ?>
+                                        <td class="text-center" style="white-space: normal; word-wrap: break-word;">
+                                            <?php $opt = $row['opt_' . $i]; ?>
+                                            <?php if (!empty($opt) && isImage($opt)): ?>
+                                            <img class="img-fluid img-thumbnail" src="<?= htmlspecialchars($opt) ?>"
+                                                alt="Option <?= $i ?>" style="max-width: 60px; height: auto;">
                                             <?php else: ?>
-                                            <?= htmlspecialchars($row['opt_2']) ?>
+                                            <?= htmlspecialchars($opt) ?>
                                             <?php endif; ?>
                                         </td>
+                                        <?php endfor; ?>
 
-                                        <td>
-                                            <?php if (!empty($row['opt_3']) && isImage($row['opt_3'])): ?>
-                                            <img class="img-thumbnail" src="<?= htmlspecialchars($row['opt_3']) ?>"
-                                                alt="Option 3" style="max-width: 100px; height: auto;">
-                                            <?php else: ?>
-                                            <?= htmlspecialchars($row['opt_3']) ?>
-                                            <?php endif; ?>
-                                        </td>
-
-                                        <td>
-                                            <?php if (!empty($row['opt_4']) && isImage($row['opt_4'])): ?>
-                                            <img class="img-thumbnail" src="<?= htmlspecialchars($row['opt_4']) ?>"
-                                                alt="Option 4" style="max-width: 100px; height: auto;">
-                                            <?php else: ?>
-                                            <?= htmlspecialchars($row['opt_4']) ?>
-                                            <?php endif; ?>
-                                        </td>
-
-                                        <td>
+                                        <td class="text-center">
                                             <?php if (!empty($row['answer']) && isImage($row['answer'])): ?>
-                                            <img class="img-thumbnail" src="<?= htmlspecialchars($row['answer']) ?>"
-                                                alt="Answer" style="max-width: 100px; height: auto;">
+                                            <img class="img-fluid img-thumbnail"
+                                                src="<?= htmlspecialchars($row['answer']) ?>" alt="Answer"
+                                                style="max-width: 60px; height: auto;">
                                             <?php else: ?>
                                             <?= htmlspecialchars($row['answer']) ?>
                                             <?php endif; ?>
                                         </td>
-                                        <td>
+
+                                        <td class="text-center">
                                             <form class="d-inline" method="post" action="update_questions.php"
                                                 enctype="multipart/form-data">
                                                 <input type="hidden" name="__csrf"
@@ -509,8 +489,9 @@ require 'layout/header.php';
                                                     value="<?= htmlspecialchars($id) ?>">
                                                 <input type="hidden" name="id"
                                                     value="<?= htmlspecialchars($row['id']) ?>">
-                                                <button name="editBtn" class="btn btn-sm me-1"
-                                                    style="background-color: #6f42c1; color: white;">Edit</button>
+                                                <button name="editBtn" class="btn btn-sm btn-primary mb-1">
+                                                    Edit
+                                                </button>
                                             </form>
 
                                             <form class="d-inline" method="post"
@@ -522,13 +503,12 @@ require 'layout/header.php';
                                                     value="<?= htmlspecialchars($id) ?>">
                                                 <input type="hidden" name="deleteId"
                                                     value="<?= htmlspecialchars($row['id']) ?>">
-                                                <button name="delete" onclick="return confirm('Are you sure ?')"
-                                                    class="btn btn-sm"
-                                                    style="background-color: #e83e8c; color: white;">Delete</button>
+                                                <button name="delete" onclick="return confirm('Are you sure?')"
+                                                    class="btn btn-sm btn-danger">
+                                                    Delete
+                                                </button>
                                             </form>
                                         </td>
-
-
                                     </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -541,6 +521,8 @@ require 'layout/header.php';
                         </div>
                     </div>
                 </div>
+
+
             </div>
         </div>
     </div>
