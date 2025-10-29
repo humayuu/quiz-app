@@ -1,5 +1,9 @@
 <?php
 session_start();
+if(!isset($_SESSION['LoggedIn']) || $_SESSION['LoggedIn'] !== true){
+    header('Location: ../index.php');
+    exit;
+}
 require '../config.php';
 
 if (!isset($_SESSION['errors'])) {

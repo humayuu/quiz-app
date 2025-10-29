@@ -1,5 +1,9 @@
 <?php
 session_start();
+if(!isset($_SESSION['AdminId']) || !isset( $_SESSION['AdminLoggedIn']) ||  $_SESSION['AdminLoggedIn'] !== true){
+    header('Location: ../../index.php');
+    exit;
+}
 // Connection to database
 require '../../config.php';
 

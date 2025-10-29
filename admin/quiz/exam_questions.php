@@ -1,6 +1,11 @@
 <?php
+session_start();
 // Database Connection
 require '../../config.php';
+if(!isset($_SESSION['AdminId']) || !isset( $_SESSION['AdminLoggedIn']) ||  $_SESSION['AdminLoggedIn'] !== true){
+    header('Location: ../../index.php');
+    exit;
+}
 
 try{
     $stmt = $conn->prepare('SELECT * FROM exam_category_tbl ORDER BY exam_category');

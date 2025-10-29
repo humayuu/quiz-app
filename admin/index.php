@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['issSubmitted'])) {
 
       
         // Store Admin Data into session variable
-        $_SESSION['LoggedIn']      = true;
+        $_SESSION['AdminLoggedIn'] = true;
         $_SESSION['AdminId']       = $admin['id'];
         $_SESSION['adminName']     = $admin['user_name'];
 

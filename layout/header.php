@@ -28,9 +28,6 @@
                     <li class="nav-item">
                         <a class="nav-link fs-6 text-light" href=".././quiz/user_result.php">Last Results</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link fs-6 text-light" href="#">Logout</a>
-                    </li>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
@@ -42,7 +39,7 @@
                             User
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">Logout</a></li>
+                            <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
                         </ul>
                     </li>
                 </ul>

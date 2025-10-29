@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 25, 2025 at 02:03 PM
+-- Generation Time: Oct 29, 2025 at 05:54 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -74,6 +74,20 @@ CREATE TABLE `questions_tbl` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `result_tbl`
+--
+
+CREATE TABLE `result_tbl` (
+  `id` int(11) NOT NULL,
+  `user_id` varchar(100) DEFAULT NULL,
+  `category_id` varchar(100) NOT NULL,
+  `user_result` varchar(100) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `user_tbl`
 --
 
@@ -108,6 +122,12 @@ ALTER TABLE `questions_tbl`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `result_tbl`
+--
+ALTER TABLE `result_tbl`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `user_tbl`
 --
 ALTER TABLE `user_tbl`
@@ -133,6 +153,12 @@ ALTER TABLE `exam_category_tbl`
 -- AUTO_INCREMENT for table `questions_tbl`
 --
 ALTER TABLE `questions_tbl`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `result_tbl`
+--
+ALTER TABLE `result_tbl`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --

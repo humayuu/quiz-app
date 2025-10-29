@@ -1,5 +1,9 @@
 <?php
 session_start();
+if(isset($_SESSION['LoggedIn']) == true){
+    header('Location: quiz/select_exam.php');
+    exit;
+}
 require 'config.php';
 
 // Generate CSRF Token

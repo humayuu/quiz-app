@@ -68,7 +68,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#">
+                    <a href="../../logout.php">
                         <div class="parent-icon"><i class="bx bx-power-off"></i>
                         </div>
                         <div class="menu-title">Logout</div>
